@@ -69,7 +69,7 @@ init python:
                         total += 1 #Число групп. Факт нахождения групп
                         #Выделение группы
                         for l in range (0, (numbutt - 1)):
-                            mass[y- numbutt + l][x] = "dum" #Замена знака у готовых групп
+                            mass[x][y- numbutt + l] = "dum" #Замена знака у готовых групп
                     imgbutt = mass[x][y] #Сброс группы на новую
                     numbutt = 1
                     if (y==10) and (numbutt > 2): #Концевая группа
@@ -77,7 +77,7 @@ init python:
                         total += 1
                         #Выделение группы
                         for l in range (1, numbutt):
-                            mass[y - numbutt + l][x] = "dum" #Замена знака у готовых групп
+                            mass[x][y - numbutt + l] = "dum" #Замена знака у готовых групп
 
 
     for i in range (0, 10):
