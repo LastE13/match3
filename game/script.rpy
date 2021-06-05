@@ -14,8 +14,6 @@ init python:
     nnn=[1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
     img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
     mass=[[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14,[0]*14]
-    fff=0
-    mass0=0
 
     def Check ():
         global zzz, k1, k2, m1, m2, m3, m4, m5
@@ -55,8 +53,7 @@ init python:
 
     for i in range(0, 14):
         for j in range(0, 14):
-            mass[i][j]=fff
-            fff+=1
+            mass[i][j]=random.choice(img_list)
 screen m3:
     tag menu
     add "#a0aaaf"
@@ -65,8 +62,7 @@ screen m3:
     #text '[mass]' xpos 800 ypos 20
     for i in range(len(mass)):
         for j in range(len(mass[i])):
-            $mass0=mass[i][j]
-            textbutton "[mass0]" xpos 400+72*j ypos 10+72*i action [SetVariable('k2',i), SetVariable('k1',j), Function(Check)]
+            imagebutton auto mass[i][j] xpos 400+72*j ypos 10+72*i action [SetVariable('k2',j), SetVariable('k1',i), Function(Check)]
     text '[zzz] | [k1] | [k2] ' xpos 100 ypos 20
     text '[m1] | [m2] | [m3]' xpos 100 ypos 60
     text '[m4] | [m5] | [m3]' xpos 100 ypos 100
