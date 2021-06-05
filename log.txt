@@ -1,22 +1,22 @@
-Sat Jun  5 19:21:38 2021
+Sat Jun  5 20:23:01 2021
 Windows-7-6.1.7601-SP1
 Ren'Py 7.4.4.1439
  
 
-Bootstrap to the start of init.init took 0.13s
+Bootstrap to the start of init.init took 0.14s
 Early init took 0.00s
 Loader init took 0.01s
-Loading error handling took 0.05s
-Loading script took 0.41s
-Loading save slot metadata. took 0.01s
+Loading error handling took 0.03s
+Loading script took 0.24s
+Loading save slot metadata. took 0.02s
 Loading persistent took 0.00s
 Importing _renpysteam: ImportError('No module named _renpysteam',)
-Running init code took 0.09s
+Running init code took 0.06s
 Loading analysis data took 0.05s
 Analyze and compile ATL took 0.00s
 Index archives took 0.00s
 Backing up script files to 'C:\\Users\\Nosochek\\AppData\\Roaming/RenPy/backups\\match3':
-Dump and make backups. took 0.14s
+Dump and make backups. took 0.13s
 Cleaning cache took 0.00s
 Making clean stores took 0.00s
 Initial gc. took 0.03s
@@ -30,8 +30,8 @@ Build styles took 0.01s
 Load screen analysis took 0.00s
 Analyze screens took 0.02s
 Save screen analysis took 0.09s
-Prepare screens took 0.11s
-Save pyanalysis. took 0.00s
+Prepare screens took 0.10s
+Save pyanalysis. took 0.16s
 Save bytecode. took 0.03s
 Running _start took 0.00s
 Performance test:
@@ -62,4 +62,64 @@ Texture testing:
 Screen sizes: virtual=(1920, 1080) physical=(1733, 975) drawable=(1733, 975)
 Root FBO is: 0
 FBO Maximum Texture Size: 2048
-Total time until interface ready: 1.68209600449s
+Total time until interface ready: 1.61909198761s
+Resetting cache.
+Bootstrap to the start of init.init took 15.17s
+Early init took 0.00s
+Loader init took 0.01s
+Loading error handling took 0.03s
+Loading script took 0.11s
+Loading save slot metadata. took 0.01s
+Loading persistent took 0.00s
+Importing _renpysteam: ImportError('No module named _renpysteam',)
+Running init code took 0.06s
+Loading analysis data took 0.04s
+Analyze and compile ATL took 0.00s
+Index archives took 0.00s
+Dump and make backups. took 0.13s
+Cleaning cache took 0.00s
+Making clean stores took 0.00s
+Initial gc. took 0.04s
+DPI scale factor: 1.250000
+nvdrs: Loaded, about to disable thread optimizations.
+nvdrs: "Couldn't load nvlib." (can be ignored)
+Creating interface object took 0.00s
+Cleaning stores took 0.00s
+Init translation took 0.06s
+Build styles took 0.01s
+Load screen analysis took 0.12s
+Analyze screens took 0.00s
+Save screen analysis took 0.00s
+Prepare screens took 0.11s
+Save pyanalysis. took 0.00s
+Save bytecode. took 0.02s
+Running _start took 0.00s
+Performance test:
+Interface start took 0.05s
+
+Initializing gl renderer:
+primary display bounds: (0, 0, 1920, 1080)
+swap interval: 1 frames
+Windowed mode.
+Vendor: 'ATI Technologies Inc.'
+Renderer: 'AMD Radeon HD 6800 Series'
+Version: '4.5.13399 Compatibility Profile Context 15.200.1062.1004'
+Display Info: None
+Number of texture units: 18
+Using shader environment.
+Using FBO RTT.
+Root FBO is: 0
+FBO Maximum Texture Size: 2048
+Using gl renderer.
+Texture testing:
+- Hardware max texture size: 16384
+- 64px textures work.
+- 128px textures work.
+- 256px textures work.
+- 512px textures work.
+- 1024px textures work.
+- 2048px textures work.
+Screen sizes: virtual=(1920, 1080) physical=(1733, 975) drawable=(1733, 975)
+Root FBO is: 0
+FBO Maximum Texture Size: 2048
+Total time until interface ready: 16.0979199409s

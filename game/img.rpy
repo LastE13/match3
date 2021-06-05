@@ -15,3 +15,4 @@ init:
     image melon_hover = "ico/melon_hover.png"
     image orange_idle = "ico/orange_idle.png"
     image orange_hover = "ico/orange_hover.png"
+    image dum = "ico/dum.png"
