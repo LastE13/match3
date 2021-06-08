@@ -133,6 +133,11 @@ init python:
             boom_amt -= 2
             self.points += boom_amt**2 * 10
 
+        def ResetBoom(self):
+            for x in range(self.xysize[0]):
+                for y in range(self.xysize[1]):
+                    self.grid[x][y].go_boom = False
+
         def CalcFall(self):
             ## TODO: посчитать насколько каждый элемент должен упасть, и записать это ему в поле fall_amt. Нужно для анимации. Отдельно будет DoFall
             for x in range(self.xysize[0]):
@@ -156,8 +161,8 @@ init python:
         def CheckSwap(self, xy1, xy2):
             x1, y1 = xy1
             x2, y2 = xy2
-            check1 = self.CheckBoom(xy1, self.grid[x2][y2].type)
-            check2 = self.CheckBoom(xy2, self.grid[x1][y1].type)
+            check1 = self.CheckBoom(xy1, self.grid[x2][y2].type, True)
+            check2 = self.CheckBoom(xy2, self.grid[x1][y1].type, True)
             return (check1 or check2)
 
 
@@ -200,6 +205,9 @@ screen m3_select_second(map):
                         elif cell_selected in ((x-1, y),(x+1, y),(x, y-1),(x, y+1)) and map.CheckSwap(cell_selected, (x, y)):
                             action Return((x, y))
 
+                        if map.grid[x][y].go_boom:
+                            background Solid("#f00")
+
 
 image grey = Solid("#a0aaaf")
 label start:
@@ -213,6 +221,7 @@ label start:
 
     label .loop:
 
+        $ map.ResetBoom()
         call screen m3_select_first(map=map)
         if _return == "selected":
 
