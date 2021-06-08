@@ -142,8 +142,8 @@ init python:
             ## TODO: посчитать насколько каждый элемент должен упасть, и записать это ему в поле fall_amt. Нужно для анимации. Отдельно будет DoFall
             for x in range(self.xysize[0]):
                 fall_amt = 0
-                for _y in range(self.xysize[1]):
-                    y = _y - i
+                for y in range(self.xysize[1]):
+                    #y = _y - i
                     element = self.grid[x][y]
                     if element.type == E_NULL:
                         fall_amt += 1
@@ -155,16 +155,41 @@ init python:
                 for y in range(self.xysize[1]):
                     element = self.grid[x][y]
                     if element.fall_amt > 0:
-                        self.grid[x][y + element.fall_amt].type = element.type
+                        self.grid[x][y - element.fall_amt].type = element.type
                         element.fall_amt = 0
 
         def CheckSwap(self, xy1, xy2):
             x1, y1 = xy1
             x2, y2 = xy2
-            check1 = self.CheckBoom(xy1, self.grid[x2][y2].type, True)
-            check2 = self.CheckBoom(xy2, self.grid[x1][y1].type, True)
+
+            ## swap elements
+            temp = self.grid[x1][y1]
+            self.grid[x1][y1] = self.grid[x2][y2]
+            self.grid[x2][y2] = temp
+
+            ## check how grid will behave
+            check1 = self.CheckBoom(xy1)
+            check2 = self.CheckBoom(xy2)
+
+            ## swap elements back
+            temp = self.grid[x1][y1]
+            self.grid[x1][y1] = self.grid[x2][y2]
+            self.grid[x2][y2] = temp
+
             return (check1 or check2)
 
+        def SwapAndMark(self, xy1, xy2):
+            x1, y1 = xy1
+            x2, y2 = xy2
+
+            ## swap elements
+            temp = self.grid[x1][y1]
+            self.grid[x1][y1] = self.grid[x2][y2]
+            self.grid[x2][y2] = temp
+
+            ## check how grid will behave
+            self.CheckBoom(xy1, mark = True)
+            self.CheckBoom(xy2, mark = True)
 
     #img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
 
@@ -187,10 +212,11 @@ screen m3_select_second(map):
     for x in range (map.xysize[0]):
         for y in range (map.xysize[1]):
             $ element = map.grid[x][y]
+            $ is_nb = cell_selected in ((x-1, y),(x+1, y),(x, y-1),(x, y+1))
+            $ valid = is_nb and map.CheckSwap(cell_selected, (x, y))
             if element.type != E_NULL:
                 frame:
-
-                    if cell_selected != (x, y):
+                    if cell_selected != (x, y) and not valid:
                         background None
 
                     align (.5,.5)
@@ -202,18 +228,33 @@ screen m3_select_second(map):
                         if cell_selected == (x, y):
                             action SetVariable('cell_selected', None), Return("deselected")
 
-                        elif cell_selected in ((x-1, y),(x+1, y),(x, y-1),(x, y+1)) and map.CheckSwap(cell_selected, (x, y)):
+                        elif valid:
                             action Return((x, y))
 
-                        if map.grid[x][y].go_boom:
-                            background Solid("#f00")
 
+screen m3_boom(map):
+    for x in range (map.xysize[0]):
+        for y in range (map.xysize[1]):
+            $ element = map.grid[x][y]
+            if element.type != E_NULL:
+                frame:
+                    background None
+                    align (.5,.5)
+                    xoffset 72*(x - map.xysize[0]//2)
+                    yoffset 72*(y - map.xysize[1]//2)
+                    imagebutton:
+                        auto img_list[element.type]
+                        if element.go_boom:
+                            at transform:
+                                linear .25 zoom .8
+                                linear .15 zoom 1.25 alpha 0
+    timer 1. action Return()
 
 image grey = Solid("#a0aaaf")
 label start:
     $ map = Grid(
         types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),
-        xysize = (10, 5)
+        xysize = (10, 15)
     )
     $ map.Fill()
 
@@ -229,5 +270,12 @@ label start:
             if _return == "deselected":
                 jump .loop
 
+            $ map.SwapAndMark(cell_selected, _return)
+            call screen m3_boom(map=map)
+            $ map.DoBoom()
+            #$ map.CalcFall()
+            #$ map.DoFall()
+            #$ map.Fill()
 
-    return
+
+    jump .loop
