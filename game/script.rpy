@@ -93,14 +93,14 @@ init python:
                     break
 
             dhor = right - left
-            if dhor >= 2:
+            if dhor > 1:
                 boom = True
                 if mark:
                     for i in range(dhor + 1):
                         self.grid[left + i][y].go_boom = True
 
             dver = bottom - top
-            if dver >= 2:
+            if dver > 1:
                 boom = True
                 if mark:
                     for i in range(dver + 1):
@@ -135,32 +135,90 @@ init python:
 
         def CalcFall(self):
             ## TODO: посчитать насколько каждый элемент должен упасть, и записать это ему в поле fall_amt. Нужно для анимации. Отдельно будет DoFall
-            return
+            for x in range(self.xysize[0]):
+                fall_amt = 0
+                for _y in range(self.xysize[1]):
+                    y = _y - i
+                    element = self.grid[x][y]
+                    if element.type == E_NULL:
+                        fall_amt += 1
+                    else:
+                        element.fall_amt = fall_amt
+
+        def DoFall(self):
+            for x in range(self.xysize[0]):
+                for y in range(self.xysize[1]):
+                    element = self.grid[x][y]
+                    if element.fall_amt > 0:
+                        self.grid[x][y + element.fall_amt].type = element.type
+                        element.fall_amt = 0
+
+        def CheckSwap(self, xy1, xy2):
+            x1, y1 = xy1
+            x2, y2 = xy2
+            check1 = self.CheckBoom(xy1, self.grid[x2][y2].type)
+            check2 = self.CheckBoom(xy2, self.grid[x1][y1].type)
+            return (check1 or check2)
+
 
     #img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
 
-screen m3(map):
-    tag menu
-    add "#a0aaaf"
-
+default cell_selected = None
+screen m3_select_first(map):
     for x in range (map.xysize[0]):
         for y in range (map.xysize[1]):
-            $ element = map.grid[i][j]
+            $ element = map.grid[x][y]
             if element.type != E_NULL:
-                imagebutton:
-                    auto img_list[element.type]
-                    xpos 500+72*x
-                    ypos 100+72*y
-                    #action [SetVariable('k2',j), SetVariable('k1',i), Function(Check)]
+                frame:
+                    background None
+                    align (.5,.5)
+                    xoffset 72*(x - map.xysize[0]//2)
+                    yoffset 72*(y - map.xysize[1]//2)
+                    imagebutton:
+                        auto img_list[element.type]
+                        action SetVariable('cell_selected', (x, y)), Return("selected")
+
+screen m3_select_second(map):
+    for x in range (map.xysize[0]):
+        for y in range (map.xysize[1]):
+            $ element = map.grid[x][y]
+            if element.type != E_NULL:
+                frame:
+
+                    if cell_selected != (x, y):
+                        background None
+
+                    align (.5,.5)
+                    xoffset 72*(x - map.xysize[0]//2)
+                    yoffset 72*(y - map.xysize[1]//2)
+                    imagebutton:
+                        auto img_list[element.type]
+
+                        if cell_selected == (x, y):
+                            action SetVariable('cell_selected', None), Return("deselected")
+
+                        elif cell_selected in ((x-1, y),(x+1, y),(x, y-1),(x, y+1)) and map.CheckSwap(cell_selected, (x, y)):
+                            action Return((x, y))
 
 
-
+image grey = Solid("#a0aaaf")
 label start:
     $ map = Grid(
         types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),
         xysize = (10, 5)
     )
     $ map.Fill()
-    call screen m3(map=map)
+
+    show grey
+
+    label .loop:
+
+        call screen m3_select_first(map=map)
+        if _return == "selected":
+
+            call screen m3_select_second(map=map)
+            if _return == "deselected":
+                jump .loop
+
 
     return
