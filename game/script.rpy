@@ -1,112 +1,166 @@
-﻿# The script of the game goes in this file.
+label main_menu:
+    $ _config.quit_confirm = False
+    return
 init python:
-    import random
+    E_NULL = None
+    E_APPLE = 0
+    E_BANANA = 1
+    E_CARROT = 2
+    E_CHERRY = 3
+    E_CORN = 4
+    E_LEMON = 5
+    E_MELON = 6
+    E_ORANGE = 7
 
-    k1 = 0
-    k2 = 0
     img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
-    mass = [[0]*10, [0]*10, [0]*10, [0]*10, [0]*10, [0]*10, [0]*10, [0]*10, [0]*10, [0]*10]
-    numbutt = 0 #- Число кнопок в текущей группе
-    imgbutt = '' #- картинка группы/(предыдущего поля)
-    total = 0 #- Число групп
 
-    def Check ():
-        global k1, k2
-        if (k2+3) < 10:
-            if mass[k1][k2+2] == mass[k1][k2+3] == mass[k1][k2]:
-                mass[k1][k2], mass[k1][k2+1] = mass[k1][k2+1], mass[k1][k2]
-        if (k2-3) >= 0:
-            if mass[k1][k2-2] == mass[k1][k2-3] == mass[k1][k2]:
-                mass[k1][k2], mass[k1][k2-1] = mass[k1][k2-1], mass[k1][k2]
-        if (k1+3) < 10:
-            if mass[k1+2][k2] == mass[k1+3][k2] == mass[k1][k2]:
-                mass[k1][k2], mass[k1+1][k2] = mass[k1+1][k2], mass[k1][k2]
-        if (k1-3) >= 0:
-            if mass[k1-2][k2] == mass[k1-3][k2] == mass[k1][k2]:
-                mass[k1][k2], mass[k1-1][k2] = mass[k1-1][k2], mass[k1][k2]
+    class Element:
+        def __init__(self, type):
+            self.type = type
+            self.go_boom = False
+            self.fall_amt = 0
 
+    class Grid:
+        def __init__(self, types, xysize):
+            self.xysize = xysize
+            self.types = types
+            self.points = 0
+            self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]
 
+        def CheckBoom(self, xy, target_type = None, mark = False):
 
+            x, y = xy
+            boom = False
+            left, top = xy
+            right, bottom = xy
 
-    def an():
-        global mass, imgbutt, numbutt, total
-        #АНАЛИЗ ПО ГОРИЗОНТАЛИ
-        for y in range (1, 10):
-            numbutt = 0 #Обнуляем число кнопок в текущей группе
-            for x in range (1, 10):
-                if x == 1:
-                    imgbutt = mass[y][x]
-                if mass[y][x] == imgbutt:#imgbutt - число группы
-                    numbutt += 1
+            if target_type is None:
+                target_type = self.grid[x][y].type
+
+            if target_type == E_NULL:
+                return 0
+
+            ###
+            # LEFT
+            offset = 1
+            while True:
+                if x - offset < 0:
+                    break
+
+                if self.grid[x - offset][y].type == target_type:
+                    offset += 1
+                    left -= 1
                 else:
-                    if numbutt > 2: #Найдена группа из numbutt кнопок imgbutt(>=3)
-                        #Код подсчёта групп/очков
-                        total += 1 #Число групп. Факт нахождения групп
-                        #Выделение группы
-                        for l in range (0, (numbutt - 1)):
-                            mass[x- numbutt + l][y] = "dum" #Замена знака у готовых групп
-                    imgbutt = mass[y][x] #Сброс группы на новую
-                    numbutt = 1
-                    if (x==10) and (numbutt > 2): #Концевая группа
-                        #Код подсчёта групп/очков
-                        total += 1
-                        #Выделение группы
-                        for l in range (1, numbutt):
-                            mass[x - numbutt + l][y] *= (-1) #Замена знака у готовых групп
+                    break
 
+            ###
+            # RIGHT
+            offset = 1
+            while True:
+                if x + offset >= self.xysize[0]:
+                    break
 
-        #АНАЛИЗ ПО ВЕРТИКАЛИ
-        for x in range (1, 10):#ЦИКЛ x = 1 То 10: Поле 10х 10
-            numbutt = 0 #Число фишек в текущей группе
-            for y in range (1, 10):#ЦИКЛ y = 1 То 10:
-                if y==1:
-                    imgbutt = mass[x][y] #ЕСЛИ y = 1 To imgbutt = | M(y, x) |
-                if mass[x][y] == imgbutt:#imgbutt - число группы
-                    numbutt += 1
+                if self.grid[x + offset][y].type == target_type:
+                    offset += 1
+                    right += 1
                 else:
-                    if numbutt > 2: #Найдена группа из numbutt фишек imgbutt(>=3)
-                        #Код подсчёта групп/очков
-                        total += 1 #Число групп. Факт нахождения групп
-                        #Выделение группы
-                        for l in range (0, (numbutt - 1)):
-                            mass[x][y- numbutt + l] = "dum" #Замена знака у готовых групп
-                    imgbutt = mass[x][y] #Сброс группы на новую
-                    numbutt = 1
-                    if (y==10) and (numbutt > 2): #Концевая группа
-                        #Код подсчёта групп/очков
-                        total += 1
-                        #Выделение группы
-                        for l in range (1, numbutt):
-                            mass[x][y - numbutt + l] = "dum" #Замена знака у готовых групп
+                    break
+
+            ###
+            # TOP
+            offset = 1
+            while True:
+                if y - offset < 0:
+                    break
+
+                if self.grid[x][y - offset].type == target_type:
+                    offset += 1
+                    top -= 1
+                else:
+                    break
+
+            ###
+            # BOTTOM
+            offset = 1
+            while True:
+                if y + offset >= self.xysize[1]:
+                    break
+
+                if self.grid[x][y + offset].type == target_type:
+                    offset += 1
+                    bottom += 1
+                else:
+                    break
+
+            dhor = right - left
+            if dhor >= 2:
+                boom = True
+                if mark:
+                    for i in range(dhor + 1):
+                        self.grid[left + i][y].go_boom = True
+
+            dver = bottom - top
+            if dver >= 2:
+                boom = True
+                if mark:
+                    for i in range(dver + 1):
+                        self.grid[x][top + i].go_boom = True
+
+            return boom
 
 
-    for i in range (0, 10):
-        for j in range (0, 10):
-            mass[i][j] = random.choice(img_list)
-screen m3:
+        def Fill(self):
+            for x in range(self.xysize[0]):
+                for y in range(self.xysize[1]):
+                    if self.grid[x][y].type == E_NULL:
+                        valid_types = []
+                        for t in self.types:
+                            if not self.CheckBoom((x, y), t):
+                                valid_types.append(t)
+
+                        self.grid[x][y].type = renpy.random.choice(valid_types)
+
+        def DoBoom(self):
+            boom_amt = 0
+            for x in range(self.xysize[0]):
+                for y in range(self.xysize[1]):
+                    element = self.grid[x][y]
+                    if element.go_boom:
+                        boom_amt += 1
+                        element.type = E_NULL
+                        element.go_boom = False
+
+            boom_amt -= 2
+            self.points += boom_amt**2 * 10
+
+        def CalcFall(self):
+            ## TODO: посчитать насколько каждый элемент должен упасть, и записать это ему в поле fall_amt. Нужно для анимации. Отдельно будет DoFall
+            return
+
+    #img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
+
+screen m3(map):
     tag menu
     add "#a0aaaf"
 
-    for i in range (len(mass)):
-        for j in range (len(mass[i])):
-            imagebutton auto mass[i][j] xpos 500+72*j ypos 100+72*i action [SetVariable('k2',j), SetVariable('k1',i), Function(Check)]
+    for x in range (map.xysize[0]):
+        for y in range (map.xysize[1]):
+            $ element = map.grid[i][j]
+            if element.type != E_NULL:
+                imagebutton:
+                    auto img_list[element.type]
+                    xpos 500+72*x
+                    ypos 100+72*y
+                    #action [SetVariable('k2',j), SetVariable('k1',i), Function(Check)]
 
 
-    use navigation
-
-
-# Declare characters used by this game. The color argument colorizes the
-# name of the character.
-
-define e = Character("Eileen")
-
-
-# The game starts here.
 
 label start:
-    call screen m3
-    e "Once you add a story, pictures, and music, you can release it to the world!"
-
-    # This ends the game.
+    $ map = Grid(
+        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),
+        xysize = (10, 5)
+    )
+    $ map.Fill()
+    call screen m3(map=map)
 
     return

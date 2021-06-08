@@ -117,3 +117,7 @@ dmypy.json
 *.rpymc
 game/tl/None/common.rpymc
 game/scripts/scene/scene_day_2.rpy.bak
+*.rpyb
+game/saves/navigation.json
+game/saves/persistent
+*.rpyc
