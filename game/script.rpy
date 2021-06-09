@@ -11,6 +11,7 @@ init python:
     E_LEMON = 5
     E_MELON = 6
     E_ORANGE = 7
+    mes='Points: 0'#Сообщение с количеством поинтов
 
     img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
 
@@ -22,10 +23,10 @@ init python:
 
     class Grid:
         def __init__(self, types, xysize):
-            self.xysize = xysize
-            self.types = types
-            self.points = 0
-            self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]
+            self.xysize = xysize#Размер сетки
+            self.types = types#Типы объектов
+            self.points = 0#Очки
+            self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]#Заполнение сетки пустыми полями
 
         def CheckBoom(self, xy, target_type = None, mark = False):
 
@@ -35,10 +36,10 @@ init python:
             right, bottom = xy
 
             if target_type is None:
-                target_type = self.grid[x][y].type
+                target_type = self.grid[x][y].type#Передаёт в target_type тип объекта расположенного по х и у
 
             if target_type == E_NULL:
-                return 0
+                return 0#Если тип обекта E_NULL вернуть 0
 
             ###
             # LEFT
@@ -121,6 +122,7 @@ init python:
                         self.grid[x][y].type = renpy.random.choice(valid_types)
 
         def DoBoom(self):
+            global mes
             boom_amt = 0
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
@@ -132,11 +134,15 @@ init python:
 
             boom_amt -= 2
             self.points += boom_amt**2 * 10
+            mes = "Points: %s" %(str(self.points)) #Помещает в сообщение нужный текст
 
         def ResetBoom(self):
+            renpy.show_screen("bals", mes=mes) #Выводит экран с сообщением
+            renpy.restart_interaction() #Обновление экрана
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     self.grid[x][y].go_boom = False
+
 
         def CalcFall(self):
             ## TODO: посчитать насколько каждый элемент должен упасть, и записать это ему в поле fall_amt. Нужно для анимации. Отдельно будет DoFall
@@ -192,6 +198,8 @@ init python:
             self.CheckBoom(xy2, mark = True)
 
     #img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
+screen bals(mes):
+    text mes xpos 20 ypos 20
 
 default cell_selected = None
 screen m3_select_first(map):
@@ -253,10 +261,10 @@ screen m3_boom(map):
 image grey = Solid("#a0aaaf")
 label start:
     $ map = Grid(
-        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),
-        xysize = (10, 15)
+        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),#Отвечает за типы элементов в сетке
+        xysize = (13, 13)#Количество столбиков и рядов
     )
-    $ map.Fill()
+    $ map.Fill()#Заполнение сетки
 
     show grey
 
@@ -276,6 +284,7 @@ label start:
             #$ map.CalcFall()
             #$ map.DoFall()
             #$ map.Fill()
+
 
 
     jump .loop
