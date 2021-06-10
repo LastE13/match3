@@ -266,7 +266,7 @@ label start:
     )
     $ map.Fill()#Заполнение сетки
 
-    show grey
+    show grey#Добавление фона
 
     label .loop:
 
