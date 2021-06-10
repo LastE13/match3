@@ -169,7 +169,10 @@ init python:
 
                     else:
                         self.FillElement((x, y))
-                        self.grid[x][y].fall_amt = last_amt
+                        if last_amt > 0:
+                            self.grid[x][y].fall_amt = last_amt
+                        else:
+                            self.grid[x][y].fall_amt = 1
 
         def ResetFall(self):
             for x in range(self.xysize[0]):
