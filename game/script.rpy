@@ -12,6 +12,7 @@ init python:
     E_MELON = 6
     E_ORANGE = 7
     mes='Points: 0'#Сообщение с количеством поинтов
+    fall_time_per_cell = .25
 
     img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
 
@@ -114,15 +115,18 @@ init python:
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     if self.grid[x][y].type == E_NULL:
-                        valid_types = []
-                        for t in self.types:
-                            if not self.CheckBoom((x, y), t):
-                                valid_types.append(t)
+                        self.FillElement((x, y))
 
-                        self.grid[x][y].type = renpy.random.choice(valid_types)
+        def FillElement(self, xy):
+            x, y = xy
+            valid_types = []
+            for t in self.types:
+                if not self.CheckBoom((x, y), t):
+                    valid_types.append(t)
+
+            self.grid[x][y].type = renpy.random.choice(valid_types)
 
         def DoBoom(self):
-            global mes
             boom_amt = 0
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
@@ -134,35 +138,43 @@ init python:
 
             boom_amt -= 2
             self.points += boom_amt**2 * 10
-            mes = "Points: %s" %(str(self.points)) #Помещает в сообщение нужный текст
 
         def ResetBoom(self):
-            renpy.show_screen("bals", mes=mes) #Выводит экран с сообщением
-            renpy.restart_interaction() #Обновление экрана
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     self.grid[x][y].go_boom = False
 
-
-        def CalcFall(self):
-            ## TODO: посчитать насколько каждый элемент должен упасть, и записать это ему в поле fall_amt. Нужно для анимации. Отдельно будет DoFall
+        def Fall(self):
             for x in range(self.xysize[0]):
-                fall_amt = 0
-                for y in range(self.xysize[1]):
-                    #y = _y - i
-                    element = self.grid[x][y]
-                    if element.type == E_NULL:
-                        fall_amt += 1
+                k = self.xysize[1] - 1
+                mass = self.grid[x][::-1]
+                while True:
+                    if mass[k].type == E_NULL:
+                        for i in range(k + 1, self.xysize[1]):
+                            mass[i - 1], mass[i] = mass[i], mass[i - 1]
+                            if mass[i - 1].type != E_NULL:
+                                mass[i - 1].fall_amt += 1
+
+                    k -= 1
+                    if k<0:
+                        break
+
+                self.grid[x] = mass[::-1]
+
+                last_amt = self.xysize[1]
+                for _y in range(self.xysize[1]):
+                    y = self.xysize[1] - _y - 1
+                    if self.grid[x][y].type != E_NULL:
+                        last_amt = self.grid[x][y].fall_amt
+
                     else:
-                        element.fall_amt = fall_amt
+                        self.FillElement((x, y))
+                        self.grid[x][y].fall_amt = last_amt
 
-        def DoFall(self):
+        def ResetFall(self):
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
-                    element = self.grid[x][y]
-                    if element.fall_amt > 0:
-                        self.grid[x][y - element.fall_amt].type = element.type
-                        element.fall_amt = 0
+                    self.grid[x][y].fall_amt = 0
 
         def CheckSwap(self, xy1, xy2):
             x1, y1 = xy1
@@ -197,14 +209,21 @@ init python:
             self.CheckBoom(xy1, mark = True)
             self.CheckBoom(xy2, mark = True)
 
+        def SearchAndMark(self):
+            result = False
+            for x in range(self.xysize[0]):
+                for y in range(self.xysize[1]):
+                    if self.CheckBoom((x, y), mark = True):
+                        result = True
+            return result
+
     #img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
-screen bals(mes):
-    text mes xpos 20 ypos 20
 
 default cell_selected = None
 screen m3_select_first(map):
     for x in range (map.xysize[0]):
-        for y in range (map.xysize[1]):
+        for _y in range (map.xysize[1]):
+            $ y = map.xysize[1] - _y - 1
             $ element = map.grid[x][y]
             if element.type != E_NULL:
                 frame:
@@ -218,7 +237,8 @@ screen m3_select_first(map):
 
 screen m3_select_second(map):
     for x in range (map.xysize[0]):
-        for y in range (map.xysize[1]):
+        for _y in range (map.xysize[1]):
+            $ y = map.xysize[1] - _y - 1
             $ element = map.grid[x][y]
             $ is_nb = cell_selected in ((x-1, y),(x+1, y),(x, y-1),(x, y+1))
             $ valid = is_nb and map.CheckSwap(cell_selected, (x, y))
@@ -242,7 +262,8 @@ screen m3_select_second(map):
 
 screen m3_boom(map):
     for x in range (map.xysize[0]):
-        for y in range (map.xysize[1]):
+        for _y in range (map.xysize[1]):
+            $ y = map.xysize[1] - _y - 1
             $ element = map.grid[x][y]
             if element.type != E_NULL:
                 frame:
@@ -256,7 +277,32 @@ screen m3_boom(map):
                             at transform:
                                 linear .25 zoom .8
                                 linear .15 zoom 1.25 alpha 0
-    timer 1. action Return()
+    timer .5 action Return()
+
+
+screen m3_fall(map):
+    $ max_amt = -1
+    for x in range (map.xysize[0]):
+        for _y in range (map.xysize[1]):
+            $ y = map.xysize[1] - _y - 1
+            $ element = map.grid[x][y]
+            $ amt = element.fall_amt
+            if max_amt < amt:
+                $ max_amt = amt
+            if element.type != E_NULL:
+                frame:
+                    background None
+                    align (.5,.5)
+                    xoffset 72*(x - map.xysize[0]//2)
+                    yoffset 72*(y - map.xysize[1]//2)
+                    imagebutton:
+                        auto img_list[element.type]
+                        if element.fall_amt > 0:
+                            at transform:
+                                yoffset -72*amt
+                                linear fall_time_per_cell*amt yoffset 0
+    timer fall_time_per_cell*max_amt action Return()
+
 
 image grey = Solid("#a0aaaf")
 label start:
@@ -279,12 +325,14 @@ label start:
                 jump .loop
 
             $ map.SwapAndMark(cell_selected, _return)
-            call screen m3_boom(map=map)
-            $ map.DoBoom()
-            #$ map.CalcFall()
-            #$ map.DoFall()
-            #$ map.Fill()
-
+            $ go_boom = True
+            while go_boom:
+                call screen m3_boom(map=map)
+                $ map.DoBoom()
+                $ map.Fall()
+                call screen m3_fall(map=map)
+                $ map.ResetFall()
+                $ go_boom = map.SearchAndMark()
 
 
     jump .loop
