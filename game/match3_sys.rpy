@@ -11,6 +11,48 @@ init python:
 
     img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
 
+    class MatchTemplate:
+        def __init__(self, *mask):
+            self.mask = mask
+            self.width = 0
+            self.height = 0
+            for m in mask:
+                if m[0]+1 > self.width:
+                    self.width = m[0]+1
+                if m[1]+1 > self.height:
+                    self.height = m[1]+1
+
+    default_templates = (
+    # X X _ X | X _ X X | X _ _ | _ X X | _ _ X | X X _ |
+    #         |         | _ X X | X _ _ | X X _ | _ _ X |
+    MatchTemplate((0, 0), (1, 0), (3, 0)),
+    MatchTemplate((0, 0), (2, 0), (3, 0)),
+    MatchTemplate((0, 0), (1, 1), (2, 1)),
+    MatchTemplate((0, 1), (1, 0), (2, 0)),
+    MatchTemplate((0, 0), (1, 1), (2, 1)),
+    MatchTemplate((0, 1), (1, 1), (2, 0)),
+    MatchTemplate((0, 0), (1, 0), (2, 1)),
+
+    # X | X | _ X | X _ | X _ | _ X |
+    # X | _ | X _ | _ X | X _ | _ X |
+    # _ | X | X _ | _ X | _ X | X _ |
+    # X | X |     |     |     |     |
+    MatchTemplate((0, 0), (0, 1), (0, 3)),
+    MatchTemplate((0, 0), (0, 2), (0, 3)),
+    MatchTemplate((1, 0), (0, 1), (0, 2)),
+    MatchTemplate((0, 0), (1, 1), (1, 2)),
+    MatchTemplate((0, 0), (0, 1), (1, 2)),
+    MatchTemplate((1, 0), (1, 1), (0, 2)),
+
+    # X _ X | _ X _ | _ X | X _ |
+    # _ X _ | X _ X | X _ | _ X |
+    #       |       | _ X | X _ |
+    MatchTemplate((0, 0), (1, 1), (2, 0)),
+    MatchTemplate((0, 1), (1, 0), (2, 1)),
+    MatchTemplate((1, 0), (0, 1), (1, 2)),
+    MatchTemplate((0, 0), (1, 1), (0, 2)),
+    )
+
     class Element:
         def __init__(self, type):
             self.type = type
@@ -18,9 +60,10 @@ init python:
             self.fall_amt = 0
 
     class Grid:
-        def __init__(self, types, xysize):
+        def __init__(self, types, xysize, templates = default_templates):
             self.xysize = xysize
             self.types = types
+            self.templates = templates
             self.points = 0
             self.reward = None
             self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]
@@ -219,3 +262,37 @@ init python:
                     if self.CheckBoom((x, y), mark = True):
                         result = True
             return result
+
+        def CheckAvailableTurns(self):
+            amt = 0
+            ## перебираем всю сетку
+            for x in range(self.xysize[0]):
+                for y in range(self.xysize[1]):
+
+                    ## для каждой пары координат - перебираем все шаблоны
+                    for t in self.templates:
+
+                        ## если шаблон не влезает до конца сетки - в пень его
+                        if x + t.width > self.xysize[0]:
+                            continue
+                        if y + t.height > self.xysize[1]:
+                            continue
+
+                        ## если по шаблону расположен один и тот же тип элемента - засчитываем совпадение
+                        ## если хотя б один элемент не совпадает - дропаем шаблон
+                        e = None
+                        breaked = False
+                        for xmod, ymod in t.mask:
+                            e_type = self.grid[x + xmod][y + ymod].type
+                            if e is None:
+                                e = e_type
+                            if e == e_type:
+                                continue
+
+                            breaked = True
+                            break
+
+                        ## эта секция вызывается только тогда, когда цикл не был брейкнут
+                        if not breaked:
+                            amt += 1
+            return amt > 0

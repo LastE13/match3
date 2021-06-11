@@ -98,8 +98,10 @@ screen m3_fall(map):
 screen m3_ui(map):
 
     ## Points
-    text "{}".format(map.points):
+    vbox:
         align .1, .3
+        text "POINTS: {}".format(map.points)
+        text "TURNS: {}".format(map.CheckAvailableTurns())
 
     ## Reset
     textbutton "RESET":

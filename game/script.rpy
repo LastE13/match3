@@ -5,7 +5,7 @@ label main_menu:
 image grey = Solid("#a0aaaf")
 label start:
     $ map = Grid(
-        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, ),#E_CORN, E_LEMON, E_MELON, E_ORANGE),
+        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),
         xysize = (10, 5)
     )
     $ map.Fill()
