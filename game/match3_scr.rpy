@@ -1,5 +1,13 @@
 init python:
-    fall_time_per_cell = .25
+
+    at_spd_swap = .25
+    at_spd_fall = .15
+    at_spd_boom_startup = .15
+    at_spd_boom_followup = .35
+
+    cell_width = 72
+    cell_height = 72
+    cell_spacing = 0
 
 default cell_selected = None
 screen m3_select_first(map):
@@ -11,8 +19,8 @@ screen m3_select_first(map):
                 frame:
                     background None
                     align (.5,.5)
-                    xoffset 72*(x - map.xysize[0]//2)
-                    yoffset 72*(y - map.xysize[1]//2)
+                    xoffset cell_width*(x - map.xysize[0]//2)
+                    yoffset cell_height*(y - map.xysize[1]//2)
                     imagebutton:
                         auto img_list[element.type]
                         action SetVariable('cell_selected', (x, y)), Return("selected")
@@ -32,8 +40,8 @@ screen m3_select_second(map):
                         background None
 
                     align (.5,.5)
-                    xoffset 72*(x - map.xysize[0]//2)
-                    yoffset 72*(y - map.xysize[1]//2)
+                    xoffset cell_width*(x - map.xysize[0]//2)
+                    yoffset cell_height*(y - map.xysize[1]//2)
                     imagebutton:
                         auto img_list[element.type]
 
@@ -55,21 +63,21 @@ screen m3_boom(map):
                 frame:
                     background None
                     align (.5,.5)
-                    xoffset 72*(x - map.xysize[0]//2)
-                    yoffset 72*(y - map.xysize[1]//2)
+                    xoffset cell_width*(x - map.xysize[0]//2)
+                    yoffset cell_height*(y - map.xysize[1]//2)
                     imagebutton:
                         auto img_list[element.type]
                         if element.go_boom:
                             at transform:
-                                linear .25 zoom .8
-                                linear .15 zoom 1.25 alpha 0
-    timer .5 action Return()
+                                linear at_spd_boom_startup zoom .8
+                                linear at_spd_boom_followup zoom 1.25 alpha 0
+    timer at_spd_boom_startup+at_spd_boom_followup action Return()
 
     use m3_ui(map)
+    use m3_reward(map.reward)
 
 
 screen m3_fall(map):
-    on "show" action Show("m3_reward", amt=map.reward)
     $ max_amt = -1
     for x in range (map.xysize[0]):
         for _y in range (map.xysize[1]):
@@ -82,15 +90,42 @@ screen m3_fall(map):
                 frame:
                     background None
                     align (.5,.5)
-                    xoffset 72*(x - map.xysize[0]//2)
-                    yoffset 72*(y - map.xysize[1]//2)
+                    xoffset cell_width*(x - map.xysize[0]//2)
+                    yoffset cell_height*(y - map.xysize[1]//2)
                     imagebutton:
                         auto img_list[element.type]
                         if element.fall_amt > 0:
                             at transform:
-                                yoffset -72*amt
-                                linear fall_time_per_cell*amt yoffset 0
-    timer fall_time_per_cell*max_amt action Return()
+                                yoffset -cell_height*amt
+                                linear at_spd_fall*amt yoffset 0
+    timer at_spd_fall*max_amt action Return()
+
+    use m3_ui(map)
+    use m3_reward(map.reward)
+
+
+screen m3_swap(map, xy1, xy2):
+    $ dxy1 = (xy2[0] - xy1[0], xy2[1] - xy1[1])
+    $ dxy2 = (xy1[0] - xy2[0], xy1[1] - xy2[1])
+    for x in range (map.xysize[0]):
+        for _y in range (map.xysize[1]):
+            $ y = map.xysize[1] - _y - 1
+            $ element = map.grid[x][y]
+            if element.type != E_NULL:
+                frame:
+                    background None
+                    align (.5,.5)
+                    xoffset cell_width*(x - map.xysize[0]//2)
+                    yoffset cell_height*(y - map.xysize[1]//2)
+                    imagebutton:
+                        auto img_list[element.type]
+                        if xy1 == (x, y):
+                            at transform:
+                                linear at_spd_swap xoffset cell_width*dxy1[0] yoffset cell_height*dxy1[1]
+                        if xy2 == (x, y):
+                            at transform:
+                                linear at_spd_swap xoffset cell_width*dxy2[0] yoffset cell_height*dxy2[1]
+    timer at_spd_swap action Return()
 
     use m3_ui(map)
 
@@ -98,9 +133,13 @@ screen m3_fall(map):
 screen m3_ui(map):
 
     ## Points
+    text str(map.points):
+        size 90
+        xalign .5
+        ypos 30
+
     vbox:
         align .1, .3
-        text "POINTS: {}".format(map.points)
         text "TURNS: {}".format(map.CheckAvailableTurns())
 
     ## Reset
@@ -110,13 +149,37 @@ screen m3_ui(map):
 
 screen m3_reward(amt):
 
-    label str(amt):
-        text_outlines [ (absolute(1), "#000", absolute(0), absolute(0)) ]
-        align .5, .25
-        at transform:
-            alpha 0
-            linear .25 alpha 1 zoom 1.5 yoffset 10
-            linear .5 yoffset 30
-            linear .5 alpha 0 yoffset 40
+    if amt > 0:
+        label "+" + str(amt):
+            text_outlines [ (absolute(1), "#000", absolute(0), absolute(0)) ]
+            text_size 60
+            xalign .5
+            ypos 100
 
-    timer 1.25 action Hide("m3_reward")
+screen m3_points(map):
+
+    for x in range (map.xysize[0]):
+        for _y in range (map.xysize[1]):
+            $ y = map.xysize[1] - _y - 1
+            $ element = map.grid[x][y]
+            if element.type != E_NULL:
+                frame:
+                    background None
+                    align (.5,.5)
+                    xoffset cell_width*(x - map.xysize[0]//2)
+                    yoffset cell_height*(y - map.xysize[1]//2)
+                    imagebutton:
+                        auto img_list[element.type]
+
+    use m3_ui(map)
+
+    label "+" + str(map.reward):
+        text_outlines [ (absolute(1), "#000", absolute(0), absolute(0)) ]
+        text_size 60
+        xalign .5
+        ypos 100
+        at transform:
+            linear .15 zoom 1.2
+            linear .35 zoom .5 alpha 0 ypos 65
+
+    timer .5 action Return()
