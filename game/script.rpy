@@ -5,15 +5,16 @@ label main_menu:
 image grey = Solid("#a0aaaf")
 label start:
     $ map = Grid(
-        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY, E_CORN, E_LEMON, E_MELON, E_ORANGE),
-        xysize = (10, 5)
+        types = (E_APPLE, E_BANANA, E_CARROT, E_CHERRY),#, E_CORN, E_LEMON, E_MELON, E_ORANGE),
+        xysize = (10, 10)
     )
     $ map.Fill()
 
     show grey
 
     label .loop:
-
+        if not map.CheckAvailableTurns():
+            jump no_turns
         $ map.ResetBoom()
         call screen m3_select_first(map=map)
         if _return == "selected":
@@ -22,7 +23,10 @@ label start:
             if _return == "deselected":
                 jump .loop
 
-            $ map.SwapAndMark(cell_selected, _return)
+            $ cell_swaped = _return
+            call screen m3_swap(map=map, xy1=cell_selected, xy2=cell_swaped)
+
+            $ map.SwapAndMark(cell_selected, cell_swaped)
             $ go_boom = True
             while go_boom:
                 call screen m3_boom(map=map)
@@ -32,7 +36,11 @@ label start:
                 $ map.ResetFall()
                 $ go_boom = map.SearchAndMark()
 
-    jump .loop
+            call screen m3_points(map)
+            $ map.PointsUpdate()
 
+    jump .loop
+label no_turns:
+    "There is no more available turns"
 label end:
     return

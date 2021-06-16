@@ -65,7 +65,8 @@ init python:
             self.types = types
             self.templates = templates
             self.points = 0
-            self.reward = None
+            self.reward = 0
+            self.chain = 0
             self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]
 
         def CheckBoom(self, xy, target_type = None, mark = False):
@@ -175,9 +176,9 @@ init python:
                         element.type = E_NULL
                         element.go_boom = False
 
+            self.chain += 1
             boom_amt -= 2
-            self.reward = boom_amt**2 * 10
-            self.points += self.reward
+            self.reward += (boom_amt * 10) * self.chain
 
         def ResetBoom(self):
             for x in range(self.xysize[0]):
@@ -217,7 +218,6 @@ init python:
                             self.grid[x][y].fall_amt = last_y
 
         def ResetFall(self):
-            self.reward = 0
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     self.grid[x][y].fall_amt = 0
@@ -296,3 +296,8 @@ init python:
                         if not breaked:
                             amt += 1
             return amt > 0
+
+        def PointsUpdate(self):
+            self.points += self.reward
+            self.reward = 0
+            self.chain = 0
