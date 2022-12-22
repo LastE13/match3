@@ -9,12 +9,13 @@ init python:
     E_chip_bomb = 6
     #E_MELON = 6
     #E_ORANGE = 7
-    iter_time = 120#Таймер выключения
+    iter_time = 120#Shutdown timer
+    bomb_boom = False
     if persistent.FAQ is None:
         persistent.FAQ = False
-    img_list = ["chip_blue_%s", "chip_green_%s", "chip_orange_%s", "chip_purple_%s", "chip_red_%s", "chip_yellow_%s", "chip_bomb_%s"]#Список изображений для кнопок
+    img_list = ["chip_blue_%s", "chip_green_%s", "chip_orange_%s", "chip_purple_%s", "chip_red_%s", "chip_yellow_%s", "chip_bomb_%s"]#List of images for buttons
     bomb = {"x" : [None, None], "y" : [None, None], "type" : None}
-    class MatchTemplate:#Класс масок для сетки
+    class MatchTemplate:#Class of masks for the grid
         def __init__(self, *mask):
             self.mask = mask
             self.width = 0
@@ -62,7 +63,7 @@ init python:
             self.go_boom = False
             self.fall_amt = 0
 
-    class Grid:#Сетка элементов
+    class Grid:#Grid class of elements (nuts)
         def __init__(self, types, xysize, templates = default_templates):
             self.xysize = xysize
             self.types = types
@@ -73,7 +74,7 @@ init python:
             self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]
 
         def CheckBoom(self, xy, target_type = None, mark = False):
-            #Проверяем можно ли взрывать
+            #We check whether it is possible to blow up
 
             x, y = xy
             boom = False
@@ -158,28 +159,26 @@ init python:
 
 
         def Fill(self):
-            #Заполнение пустых элементов
+            #Filling in empty elements
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     if self.grid[x][y].type == E_NULL:
                         self.FillElement((x, y))
 
         def FillElement(self, xy):
-            #Создание элементов
+            #Creating elements
             boom = 0
             x, y = xy
             valid_types = []
             for t in self.types:
                 if not self.CheckBoom((x, y), t):
                     valid_types.append(t)
-            boom = renpy.random.randint(0, 50)
-            print(boom)
+            boom = renpy.random.randint(0, 50)#The random number by which the bomb or the usual nut will be determined. If 1 drops out, a bomb. The larger the range, the rarer the bombs
             if boom == 1:
                 
                 for i in range(self.xysize[0]):
                     for j in range(self.xysize[1]):
                         if self.grid[i][j].type == E_chip_bomb:
-                            print(i, ", ", j, )
                             self.grid[x][y].type = renpy.random.choice(valid_types)
                             break
                 if self.grid[x][y].type == E_NULL:
@@ -189,7 +188,7 @@ init python:
             
 
         def DoBoom(self):
-            #Проверяем можно ли ещё взорвать что-то
+            #Checking if it is still possible to blow up something
             boom_amt = 0
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
@@ -204,7 +203,7 @@ init python:
             self.reward += (boom_amt * 10) * self.chain
 
         def ResetBoom(self):
-            #Сбрасываем везде возможность взрыва
+            #We reset the possibility of an explosion everywhere
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     self.grid[x][y].go_boom = False
@@ -264,10 +263,10 @@ init python:
             self.grid[x1][y1] = self.grid[x2][y2]
             self.grid[x2][y2] = temp
             
-            if self.grid[x1][y1].type == 6:#Возвращаем возможность свайпнуть бомбу
+            if self.grid[x1][y1].type == 6:#We return the opportunity to drop a bomb
                 bomb["type"] = self.grid[x2][y2].type
                 return True
-            if self.grid[x2][y2].type == 6:#Возвращаем возможность свайпнуть бомбу
+            if self.grid[x2][y2].type == 6:#We return the opportunity to drop a bomb
                 bomb["type"] = self.grid[x1][y1].type
                 return True
             return (check1 or check2)
@@ -295,21 +294,21 @@ init python:
 
         def CheckAvailableTurns(self):
             amt = 0
-            ## перебираем всю сетку
+            ## iterating through the entire grid
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
 
-                    ## для каждой пары координат - перебираем все шаблоны
+                    ## for each pair of coordinates, we iterate through all the templates
                     for t in self.templates:
 
-                        ## если шаблон не влезает до конца сетки - в пень его
+                        ## if the template does not fit to the end of the grid - into the stump of it
                         if x + t.width > self.xysize[0]:
                             continue
                         if y + t.height > self.xysize[1]:
                             continue
 
-                        ## если по шаблону расположен один и тот же тип элемента - засчитываем совпадение
-                        ## если хотя б один элемент не совпадает - дропаем шаблон
+                        ## if the same type of element is located according to the template, we count the match
+                        ## if at least one element does not match, drop the template
                         e = None
                         breaked = False
                         for xmod, ymod in t.mask:
@@ -322,25 +321,23 @@ init python:
                             breaked = True
                             break
 
-                        ## эта секция вызывается только тогда, когда цикл не был брейкнут
+                        ## this section is called only when the loop has not been broken
                         if not breaked:
                             amt += 1
             return amt > 0
 
-        def PointsUpdate(self):#Обновляем очки
+        def PointsUpdate(self):#Updating glasses
             self.points += self.reward
             self.reward = 0
             self.chain = 0
-        def bombs(self):
-            global bomb
+        def bombs(self):#Bomb function
+            global bomb, bomb_boom
             boom_amt = 0
             xx = bomb["x"]
             yy = bomb["y"]
             type = bomb["type"]
             if bomb["type"] != None and bomb["type"] != E_NULL:
-                self.grid[xx[0]][yy[0]].type = E_NULL
                 self.grid[xx[0]][yy[0]].go_boom = True
-                self.grid[xx[1]][yy[1]].type = E_NULL
                 self.grid[xx[1]][yy[1]].go_boom = True
                 for x in range(self.xysize[0]):
                     for y in range(self.xysize[1]):
@@ -350,6 +347,7 @@ init python:
                             boom_amt += 1
                 self.chain += 1
                 self.reward += (boom_amt * 2) * self.chain
+                bomb_boom = True
                 bomb["type"] = None
                 bomb["x"] = [None, None]
                 bomb["y"] = [None, None]

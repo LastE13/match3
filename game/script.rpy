@@ -4,7 +4,7 @@ label main_menu:
 image grey = Solid("#a0aaaf")
 label start:
     
-    $ map = Grid(
+    $ map = Grid(#Creating a grid with a size of 8x8
         types = (E_chip_blue, E_chip_green, E_chip_orange, E_chip_purple, E_chip_red, E_chip_yellow),#, E_CORN, E_LEMON, E_MELON, E_ORANGE),
         xysize = (8, 8)
     )
@@ -19,7 +19,7 @@ label start:
         "When you select the first nut, all the nuts with which it can be changed will be highlighted."
         "To cancel the selection click on the nut again"
     $ persistent.FAQ = True
-    label .loop:
+    label .loop:#Here the game begins
         show screen timer_test
         if not map.CheckAvailableTurns():
             jump no_turns
@@ -67,9 +67,9 @@ label start:
             call screen m3_points(map)
             
             $ map.PointsUpdate()
+            
     
-    
-    jump .loop
+    jump .loop#And this is the end of the game processing code
 label no_turns:
     "There is no more available turns"
 label end:
@@ -80,7 +80,7 @@ label test:
     return
 
 
-screen timer_test:
+screen timer_test:#Timer Screen
     zorder 100
     default timer_var =  iter_time
     default minutes = 0

@@ -13,3 +13,8 @@ init:
         yoffset 6
         xoffset 6
         ysize 75
+    image test_boom:#Explosion animation
+        alpha 0
+        "ico/boom.gif"
+        linear at_spd_boom_followup alpha .75
+        #size (75,75)

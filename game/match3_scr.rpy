@@ -4,6 +4,7 @@ init python:
     at_spd_fall = .15
     at_spd_boom_startup = .15
     at_spd_boom_followup = .35
+    at_spd_boom_bomb = 0.05
 
     cell_width = 72
     cell_height = 72
@@ -72,12 +73,23 @@ screen m3_boom(map):
                     imagebutton:
                         auto img_list[element.type]
                         if element.go_boom:
-                            at transform:
-                                linear at_spd_boom_startup zoom .8
-                                linear at_spd_boom_followup zoom 1.25 alpha 0
-    timer at_spd_boom_startup+at_spd_boom_followup action Return()
-
+                            if bomb_boom:
+                                #Transformation for explosions + animation on top of the nuts themselves
+                                foreground "test_boom"
+                                at transform:
+                                    linear at_spd_boom_startup zoom 1.25
+                                    linear at_spd_boom_followup+at_spd_boom_bomb zoom 1.4 alpha 0
+                            else:
+                                #the usual transformation
+                                at transform:
+                                    linear at_spd_boom_startup zoom .8
+                                    linear at_spd_boom_followup zoom 1.25 alpha 0
+    if bomb_boom:
+        timer at_spd_boom_startup+at_spd_boom_followup+at_spd_boom_bomb action SetVariable("bomb_boom", False), Return()
+    else:
+        timer at_spd_boom_startup+at_spd_boom_followup action Return()
     use m3_ui(map)
+    
     use m3_reward(map.reward)
     
     
