@@ -42,6 +42,13 @@ label start:
                     $ bomb["type"] = None
                     $ bomb["x"] = [None, None]
                     $ bomb["y"] = [None, None]
+                else:
+                    $print(bomb["type"])
+                    if map.grid[bomb["x"][0]][bomb["y"][0]].type == E_chip_bomb:
+                        $ bomb["type"] = map.grid[bomb["x"][1]][bomb["y"][1]].type
+                    if map.grid[bomb["x"][1]][bomb["y"][1]].type == E_chip_bomb:
+                        $ bomb["type"] = map.grid[bomb["x"][0]][bomb["y"][0]].type
+                    $print(bomb["type"])
             call screen m3_swap(map=map, xy1=cell_selected, xy2=cell_swaped)
 
             $ map.SwapAndMark(cell_selected, cell_swaped)
