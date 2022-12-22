@@ -24,7 +24,6 @@ screen m3_select_first(map):
                     imagebutton:
                         auto img_list[element.type]
                         action SetVariable('cell_selected', (x, y)), Return("selected")
-
     use m3_ui(map)
 
 screen m3_select_second(map):
@@ -38,20 +37,25 @@ screen m3_select_second(map):
                 frame:
                     if cell_selected != (x, y) and not valid:
                         background None
+                    else:
+                        background "bg_frame" #alpha .5
 
                     align (.5,.5)
                     xoffset cell_width*(x - map.xysize[0]//2)
                     yoffset cell_height*(y - map.xysize[1]//2)
                     imagebutton:
                         auto img_list[element.type]
-
+                        
                         if cell_selected == (x, y):
                             action SetVariable('cell_selected', None), Return("deselected")
 
+                            #bombs
                         elif valid:
                             action Return((x, y))
+                            
 
     use m3_ui(map)
+    
 
 
 screen m3_boom(map):
@@ -75,6 +79,8 @@ screen m3_boom(map):
 
     use m3_ui(map)
     use m3_reward(map.reward)
+    
+    
 
 
 screen m3_fall(map):
@@ -102,9 +108,11 @@ screen m3_fall(map):
 
     use m3_ui(map)
     use m3_reward(map.reward)
+    
 
 
 screen m3_swap(map, xy1, xy2):
+    
     $ dxy1 = (xy2[0] - xy1[0], xy2[1] - xy1[1])
     $ dxy2 = (xy1[0] - xy2[0], xy1[1] - xy2[1])
     for x in range (map.xysize[0]):
@@ -128,6 +136,11 @@ screen m3_swap(map, xy1, xy2):
     timer at_spd_swap action Return()
 
     use m3_ui(map)
+    
+    
+    
+    
+    
 
 
 screen m3_ui(map):
@@ -145,8 +158,13 @@ screen m3_ui(map):
     ## Reset
     textbutton "RESET":
         align .1, .5
+        text_idle_color "#222"
+        text_hover_color "#d62"
         action Jump("end")
-
+    
+    
+    
+    
 screen m3_reward(amt):
 
     if amt > 0:
@@ -155,6 +173,9 @@ screen m3_reward(amt):
             text_size 60
             xalign .5
             ypos 100
+    
+    
+    
 
 screen m3_points(map):
 

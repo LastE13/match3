@@ -1,17 +1,20 @@
 init python:
     E_NULL = None
-    E_APPLE = 0
-    E_BANANA = 1
-    E_CARROT = 2
-    E_CHERRY = 3
-    E_CORN = 4
-    E_LEMON = 5
-    E_MELON = 6
-    E_ORANGE = 7
-
-    img_list = ["apple_%s", "banana_%s", "carrot_%s", "cherry_%s", "corn_%s", "lemon_%s", "melon_%s", "orange_%s"]
-
-    class MatchTemplate:
+    E_chip_blue = 0
+    E_chip_green = 1
+    E_chip_orange = 2
+    E_chip_purple = 3
+    E_chip_red = 4
+    E_chip_yellow = 5
+    E_chip_bomb = 6
+    #E_MELON = 6
+    #E_ORANGE = 7
+    iter_time = 120#Таймер выключения
+    if persistent.FAQ is None:
+        persistent.FAQ = False
+    img_list = ["chip_blue_%s", "chip_green_%s", "chip_orange_%s", "chip_purple_%s", "chip_red_%s", "chip_yellow_%s", "chip_bomb_%s"]#Список изображений для кнопок
+    bomb = {"x" : [None, None], "y" : [None, None], "type" : None}
+    class MatchTemplate:#Класс масок для сетки
         def __init__(self, *mask):
             self.mask = mask
             self.width = 0
@@ -22,7 +25,7 @@ init python:
                 if m[1]+1 > self.height:
                     self.height = m[1]+1
 
-    default_templates = (
+    default_templates = (#Массив со всеми вариантами возможных складований
     # X X _ X | X _ X X | X _ _ | _ X X | _ _ X | X X _ |
     #         |         | _ X X | X _ _ | X X _ | _ _ X |
     MatchTemplate((0, 0), (1, 0), (3, 0)),
@@ -59,7 +62,7 @@ init python:
             self.go_boom = False
             self.fall_amt = 0
 
-    class Grid:
+    class Grid:#Сетка элементов
         def __init__(self, types, xysize, templates = default_templates):
             self.xysize = xysize
             self.types = types
@@ -70,6 +73,7 @@ init python:
             self.grid = [ [Element(E_NULL) for i in range(xysize[1])] for j in range(xysize[0]) ]
 
         def CheckBoom(self, xy, target_type = None, mark = False):
+            #Проверяем можно ли взрывать
 
             x, y = xy
             boom = False
@@ -78,6 +82,9 @@ init python:
 
             if target_type is None:
                 target_type = self.grid[x][y].type
+                
+                #if target_type == 6:
+                    #return True
 
             if target_type == E_NULL:
                 return 0
@@ -88,7 +95,6 @@ init python:
             while True:
                 if x - offset < 0:
                     break
-
                 if self.grid[x - offset][y].type == target_type:
                     offset += 1
                     left -= 1
@@ -152,21 +158,38 @@ init python:
 
 
         def Fill(self):
+            #Заполнение пустых элементов
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     if self.grid[x][y].type == E_NULL:
                         self.FillElement((x, y))
 
         def FillElement(self, xy):
+            #Создание элементов
+            boom = 0
             x, y = xy
             valid_types = []
             for t in self.types:
                 if not self.CheckBoom((x, y), t):
                     valid_types.append(t)
-
-            self.grid[x][y].type = renpy.random.choice(valid_types)
+            boom = renpy.random.randint(0, 50)
+            print(boom)
+            if boom == 1:
+                
+                for i in range(self.xysize[0]):
+                    for j in range(self.xysize[1]):
+                        if self.grid[i][j].type == E_chip_bomb:
+                            print(i, ", ", j, )
+                            self.grid[x][y].type = renpy.random.choice(valid_types)
+                            break
+                if self.grid[x][y].type == E_NULL:
+                    self.grid[x][y].type = E_chip_bomb
+            else:
+                self.grid[x][y].type = renpy.random.choice(valid_types)
+            
 
         def DoBoom(self):
+            #Проверяем можно ли ещё взорвать что-то
             boom_amt = 0
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
@@ -181,6 +204,7 @@ init python:
             self.reward += (boom_amt * 10) * self.chain
 
         def ResetBoom(self):
+            #Сбрасываем везде возможность взрыва
             for x in range(self.xysize[0]):
                 for y in range(self.xysize[1]):
                     self.grid[x][y].go_boom = False
@@ -239,7 +263,13 @@ init python:
             temp = self.grid[x1][y1]
             self.grid[x1][y1] = self.grid[x2][y2]
             self.grid[x2][y2] = temp
-
+            
+            if self.grid[x1][y1].type == 6:#Возвращаем возможность свайпнуть бомбу
+                bomb["type"] = self.grid[x2][y2].type
+                return True
+            if self.grid[x2][y2].type == 6:#Возвращаем возможность свайпнуть бомбу
+                bomb["type"] = self.grid[x1][y1].type
+                return True
             return (check1 or check2)
 
         def SwapAndMark(self, xy1, xy2):
@@ -297,7 +327,34 @@ init python:
                             amt += 1
             return amt > 0
 
-        def PointsUpdate(self):
+        def PointsUpdate(self):#Обновляем очки
             self.points += self.reward
             self.reward = 0
             self.chain = 0
+        def bombs(self):
+            global bomb
+            boom_amt = 0
+            xx = bomb["x"]
+            yy = bomb["y"]
+            type = bomb["type"]
+            if bomb["type"] != None and bomb["type"] != E_NULL:
+                self.grid[xx[0]][yy[0]].type = E_NULL
+                self.grid[xx[0]][yy[0]].go_boom = True
+                self.grid[xx[1]][yy[1]].type = E_NULL
+                self.grid[xx[1]][yy[1]].go_boom = True
+                for x in range(self.xysize[0]):
+                    for y in range(self.xysize[1]):
+                        if self.grid[x][y].type == type:
+                            #self.grid[x][y].type = E_NULL
+                            self.grid[x][y].go_boom = True
+                            boom_amt += 1
+                self.chain += 1
+                self.reward += (boom_amt * 2) * self.chain
+                bomb["type"] = None
+                bomb["x"] = [None, None]
+                bomb["y"] = [None, None]
+
+                        
+
+                        
+#
